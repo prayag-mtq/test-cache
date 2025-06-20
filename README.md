@@ -1,95 +1,42 @@
-# 🧪 NestJS MongoDB Seeder
+# 🚀 MongoDB Performance Test - No Caching (NestJS)
 
-This project demonstrates how to seed a large dataset (e.g., 100,000 fake users) into a MongoDB database using NestJS, Mongoose, and Faker.js.
+This step benchmarks raw data retrieval from MongoDB using NestJS **without any caching**.
 
 ---
 
-## 📦 Technologies Used
+## 📦 Tech Stack
 
 - **NestJS**
-- **MongoDB** (via Mongoose)
-- **Faker** (`@faker-js/faker`)
+- **MongoDB (via Mongoose)**
 - **TypeScript**
-- **ts-node**
 
 ---
 
-## 📁 File Structure
+## 📁 Project Structure
 
 ```
-test-cache/
-├── src/
-│   ├── data/
-│   │   └── schema/
-│   │       └── user.schema.ts
-│   └── seeder/
-│       ├── seeder.module.ts
-│       └── seeder.service.ts
-|       ├── seeder.ts
-├── package.json
-├── tsconfig.json
+src/
+├── app.module.ts               # Main app module
+├── data/
+│   ├── data.module.ts          # Mongoose + Controller module
+│   ├── data.controller.ts      # Endpoint for raw MongoDB fetch
+│   └── schema/
+│       └── user.schema.ts      # Mongoose User schema
+seeder.ts                       # Data seeder (100K users)
 ```
 
 ---
 
-## ⚙️ Setup Instructions
+## 🧬 User Schema
 
-### 1. 🧱 Install Dependencies
-
-```bash
-npm install
-```
-
-If you use `faker`:
-
-```bash
-npm install @faker-js/faker
-```
-
-For `ts-node` usage (if not installed):
-
-```bash
-npm install ts-node --save-dev
-```
-
----
-
-### 2. 🛠️ MongoDB Setup (Optional via Docker)
-
-If you don’t have MongoDB running locally, create a `docker-compose.yml`:
-
-```yaml
-version: '3'
-services:
-  mongo:
-    image: mongo:6
-    ports:
-      - 27017:27017
-    volumes:
-      - mongo_data:/data/db
-
-volumes:
-  mongo_data:
-```
-
-Run it:
-
-```bash
-docker-compose up -d
-```
-
----
-
-### 3. 🧬 Schema
-
-Located at `src/data/schema/user.schema.ts`
+### 📄 `src/data/schema/user.schema.ts`
 
 ```ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 @Schema()
-export class User extends Document {
+export class user extends Document {
   @Prop()
   userId: number;
 
@@ -105,76 +52,106 @@ export const UserSchema = SchemaFactory.createForClass(user);
 
 ---
 
-## 🎯 How to Seed Data
+## 🔧 App Setup
 
-### 🔹 Run Seeder
+### 📄 `src/app.module.ts`
+
+```ts
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { DataModule } from './data/data.module';
+
+@Module({
+  imports: [
+    MongooseModule.forRoot('mongodb://localhost:27017/testdb'),
+    DataModule,
+  ],
+})
+export class AppModule {}
+```
+
+---
+
+### 📄 `src/data/data.module.ts`
+
+```ts
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { DataController } from './data.controller';
+import { user, UserSchema } from './schema/user.schema';
+
+@Module({
+  imports: [
+    MongooseModule.forFeature([{ name: user.name, schema: UserSchema }]),
+  ],
+  controllers: [DataController],
+})
+export class DataModule {}
+```
+
+---
+
+### 📄 `src/data/data.controller.ts`
+
+```ts
+import { Controller, Get } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { user } from './schema/user.schema';
+
+@Controller('data')
+export class DataController {
+  constructor(
+    @InjectModel(user.name) private readonly userModel: Model<user>,
+  ) {}
+
+  @Get('nocache')
+  async getWithoutCache() {
+    const start = Date.now();
+    const data = await this.userModel.find().exec();
+    const end = Date.now();
+
+    return {
+      message: 'Fetched without cache',
+      count: data.length,
+      timeMs: end - start,
+    };
+  }
+}
+```
+
+---
+
+## 🧪 Seeding Data
+
+Ensure MongoDB has large data:
 
 ```bash
 npx ts-node seeder.ts
 ```
 
-Or add this to `package.json`:
+Seeds 100,000 users into `testdb`.
+
+---
+
+## 🚀 Run Project
+
+```bash
+npm run start:dev
+```
+
+Then visit:
+
+```
+GET http://localhost:3000/data/nocache
+```
+
+### ✅ Output
 
 ```json
-"scripts": {
-  "seed": "ts-node seeder.ts"
+{
+  "message": "Fetched without cache",
+  "count": 100000,
+  "timeMs": 1627
 }
-```
-
-Then run:
-
-```bash
-npm run seed
-```
-
----
-
-### 🧪 What it does
-
-- Clears existing users:
-
-  ```
-  🧹 Cleared user collection.
-  ```
-
-- Seeds 100,000 users with:
-
-  - `userId`: incremental
-  - `name`: random full name
-  - `timestamp`: recent random date
-
-```bash
-⏱ Insert Time: 2.2s
-🎯 Seeded 100000 users.
-```
-
----
-
-## 🧠 Tips & Customization
-
-- Change seed count in `seeder.ts`:
-
-  ```ts
-  await seeder.seed(100000); // modify as needed
-  ```
-
-- Add CLI support for `count` if needed.
-
-- Ensure MongoDB is running before executing.
-
----
-
-## ❓ Common Issues
-
-- **"Cannot find module" error**: use relative imports like `../data/...`, not `src/...`
-- **Mongo not running**: make sure your Docker container or Mongo service is up (`localhost:27017`)
-
----
-
-## ✅ Sample Output
-
-```bash
-🧹 Cleared user collection.
-⏱ Insert Time: 2.269s
-🎯 Seeded 100000 users.
 ```
