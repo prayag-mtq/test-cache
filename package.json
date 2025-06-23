@@ -9,6 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
+    "start:nodemon": "nodemon",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -30,6 +31,7 @@
     "cache-manager": "^7.0.0",
     "faker": "^6.6.6",
     "mongoose": "^8.16.0",
+    "nodemon": "^3.1.10",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

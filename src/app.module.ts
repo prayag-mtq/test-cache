@@ -1,12 +1,15 @@
 import { Module, OnModuleInit } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { DataModule } from './data/data.module';
 import { MongooseModule, InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
+    CacheModule.register({
+      ttl: 5000,
+    }),
     DataModule,
     MongooseModule.forRootAsync({
       useFactory: () => ({
@@ -24,8 +27,12 @@ import { Connection } from 'mongoose';
       }),
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
+  ],
 })
 export class AppModule implements OnModuleInit {
   constructor(@InjectConnection() private readonly connection: Connection) {}
