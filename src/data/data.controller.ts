@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 
-@Controller('data')
+@Controller('data/redis')
 export class DataController {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,

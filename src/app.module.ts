@@ -1,14 +1,22 @@
+// app.module.ts
 import { Module, OnModuleInit } from '@nestjs/common';
 import { DataModule } from './data/data.module';
 import { MongooseModule, InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import * as redisStore from 'cache-manager-ioredis';
 
 @Module({
   imports: [
-    CacheModule.register({
-      ttl: 5000,
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: () => ({
+        store: redisStore,
+        host: 'localhost',
+        port: 6379,
+        ttl: 60,
+      }),
     }),
     DataModule,
     MongooseModule.forRootAsync({

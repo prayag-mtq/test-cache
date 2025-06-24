@@ -1,8 +1,8 @@
+// data.module.ts
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schema/user.schema';
 import { DataController } from './data.controller';
-import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -12,9 +12,6 @@ import { CacheModule } from '@nestjs/cache-manager';
         schema: UserSchema,
       },
     ]),
-    CacheModule.register({
-      ttl: 5000,
-    }),
   ],
   controllers: [DataController],
 })

@@ -9,5 +9,13 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  redis:
+    image: redis:latest # Specifies the Redis image to use
+    container_name: my-redis # Sets a name for the Redis container
+    ports:
+      - "6379:6379" # Maps port 6379 on the host to port 6379 in the container
+    volumes:
+      - redis-data:/data # Mounts a named volume for data persistence
 volumes:
   mongo_data:
+  redis-data:
