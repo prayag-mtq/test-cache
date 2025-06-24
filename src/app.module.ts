@@ -7,9 +7,6 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
-    CacheModule.register({
-      ttl: 5000,
-    }),
     DataModule,
     MongooseModule.forRootAsync({
       useFactory: () => ({

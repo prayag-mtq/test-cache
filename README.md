@@ -96,7 +96,7 @@ import { DataController } from './data.controller';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    CacheModule.register(), // Required for controller-level caching
+    CacheModule.register(),
   ],
   controllers: [DataController],
 })

@@ -29,9 +29,9 @@ export class DataController {
       data = await this.userModel.find().exec();
       const dbEnd = process.hrtime.bigint();
 
-      dbFetchTime = Number(dbEnd - dbStart) / 1_000_000; // Convert to milliseconds
+      dbFetchTime = Number(dbEnd - dbStart) / 1_000_000;
 
-      await this.cacheManager.set(cacheKey, data, 60000); // cache for 60s
+      await this.cacheManager.set(cacheKey, data, 5000);
       fromCache = false;
     }
 
