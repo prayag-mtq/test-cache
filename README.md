@@ -161,20 +161,8 @@ GET http://localhost:3000/data/cache
 
 ### First request (no cache yet):
 
-```json
-{
-  "message": "Fetched with in-memory cache",
-  "count": 100000,
-  "timeMs": 630
-}
-```
+![From DB](./images/db.png)
 
 ### Second request (instant cache hit):
 
-```json
-{
-  "message": "Fetched with in-memory cache",
-  "count": 100000,
-  "timeMs": 3
-}
-```
+![Cached Request](./images/cache.png)

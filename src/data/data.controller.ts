@@ -14,27 +14,36 @@ export class DataController {
 
   @Get('cache')
   async getWithManualCache() {
-    const start = Date.now();
+    const startTime = process.hrtime.bigint();
 
     const cacheKey = 'user_data_manual_cache';
     let data = await this.cacheManager.get<User[]>(cacheKey);
 
     let fromCache = true;
+    let dbFetchTime = 0;
 
     if (!data) {
       console.log('❗Fetching from DB...');
+
+      const dbStart = process.hrtime.bigint();
       data = await this.userModel.find().exec();
-      await this.cacheManager.set(cacheKey, data, 6000); // cache for 60s
+      const dbEnd = process.hrtime.bigint();
+
+      dbFetchTime = Number(dbEnd - dbStart) / 1_000_000; // Convert to milliseconds
+
+      await this.cacheManager.set(cacheKey, data, 60000); // cache for 60s
       fromCache = false;
     }
 
-    const end = Date.now();
+    const endTime = process.hrtime.bigint();
+    const totalTimeMs = Number(endTime - startTime) / 1_000_000;
 
     return {
       message: fromCache ? '🔁 Served from CACHE' : '❗Fetched from DB',
       count: data.length,
-      timeMs: end - start,
-      cachedAt: new Date().toISOString(), // always updated
+      timeMs: Number(totalTimeMs.toFixed(3)),
+      ...(dbFetchTime > 0 && { dbFetchTimeMs: Number(dbFetchTime.toFixed(3)) }),
+      cachedAt: new Date().toISOString(),
     };
   }
 }
