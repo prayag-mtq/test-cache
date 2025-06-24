@@ -1,180 +1,139 @@
-# 🧪 NestJS MongoDB Seeder
+# ⚡ NestJS Caching Explained
 
-This project demonstrates how to seed a large dataset (e.g., 100,000 fake users) into a MongoDB database using NestJS, Mongoose, and Faker.js.
-
----
-
-## 📦 Technologies Used
-
-- **NestJS**
-- **MongoDB** (via Mongoose)
-- **Faker** (`@faker-js/faker`)
-- **TypeScript**
-- **ts-node**
+Caching is a powerful way to improve performance and reduce load on databases and APIs. NestJS supports caching out of the box using its `@nestjs/cache-manager` module, which lets you store temporary data in memory or external services like Redis.
 
 ---
 
-## 📁 File Structure
+## 📦 Types of Caching in NestJS
 
-```
-test-cache/
-├── src/
-│   ├── data/
-│   │   └── schema/
-│   │       └── user.schema.ts
-│   └── seeder/
-│       ├── seeder.module.ts
-│       └── seeder.service.ts
-|       ├── seeder.ts
-├── package.json
-├── tsconfig.json
-```
+NestJS supports two main caching strategies:
 
----
+### 1️⃣ In-Memory Caching (default)
 
-## ⚙️ Setup Instructions
+- Uses your app's memory (RAM)
+- Built into `@nestjs/cache-manager`
+- No extra setup required
 
-### 1. 🧱 Install Dependencies
+### 2️⃣ Redis Caching (external)
 
-```bash
-npm install
-```
-
-If you use `faker`:
-
-```bash
-npm install @faker-js/faker
-```
-
-For `ts-node` usage (if not installed):
-
-```bash
-npm install ts-node --save-dev
-```
+- Uses a separate Redis server
+- More scalable and production-ready
+- Requires installing `ioredis` and `cache-manager-ioredis`
 
 ---
 
-### 2. 🛠️ MongoDB Setup (Optional via Docker)
+## 💡 What Does "In-Memory Cache" Mean?
 
-If you don’t have MongoDB running locally, create a `docker-compose.yml`:
+- Stores cached data **inside your Node.js process memory**
+- Fastest possible access (no network calls)
+- **Lost when the app restarts**
+- Each instance of your app has **its own separate cache**
 
-```yaml
-version: '3'
-services:
-  mongo:
-    image: mongo:6
-    ports:
-      - 27017:27017
-    volumes:
-      - mongo_data:/data/db
-
-volumes:
-  mongo_data:
-```
-
-Run it:
-
-```bash
-docker-compose up -d
-```
-
----
-
-### 3. 🧬 Schema
-
-Located at `src/data/schema/user.schema.ts`
+### 🧠 Example
 
 ```ts
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+CacheModule.register({
+  ttl: 60, // Cache for 60 seconds
+});
+```
 
-@Schema()
-export class User extends Document {
-  @Prop()
-  userId: number;
+> No `store` specified = in-memory cache by default
 
-  @Prop()
-  name: string;
+---
 
-  @Prop()
-  timestamp: Date;
+## 🟥 What Does "Redis Cache" Mean?
+
+- Stores cached data in a **separate Redis server**
+- Can be shared across **multiple app instances**
+- Data can **persist** beyond app restarts (if configured)
+- Slightly slower than in-memory (but still fast)
+
+### 🔌 Example
+
+```bash
+npm install cache-manager-ioredis ioredis
+```
+
+```ts
+import * as redisStore from 'cache-manager-ioredis';
+
+CacheModule.register({
+  store: redisStore,
+  host: 'localhost',
+  port: 6379,
+  ttl: 60,
+});
+```
+
+---
+
+## ⚙️ How Caching Works in NestJS
+
+1. You register `CacheModule` in your app.
+2. You inject `CACHE_MANAGER` where needed.
+3. You can manually cache with `cacheManager.get` `set`, or use automatic caching via decorators/interceptors.
+
+### 🧱 Manual Example
+
+```ts
+const cached = await this.cacheManager.get('user_list');
+if (!cached) {
+  const users = await this.userService.findAll();
+  await this.cacheManager.set('user_list', users, 60);
 }
-
-export const UserSchema = SchemaFactory.createForClass(user);
 ```
 
----
+### ⚡ Auto Example
 
-## 🎯 How to Seed Data
-
-### 🔹 Run Seeder
-
-```bash
-npx ts-node seeder.ts
-```
-
-Or add this to `package.json`:
-
-```json
-"scripts": {
-  "seed": "ts-node seeder.ts"
+```ts
+@UseInterceptors(CacheInterceptor)
+@CacheKey('products')
+@CacheTTL(120)
+@Get()
+findAllProducts() {
+  return this.productService.findAll();
 }
 ```
 
-Then run:
+---
 
-```bash
-npm run seed
-```
+## ⚖️ In-Memory vs Redis: What's the Difference?
+
+| Feature                | In-Memory Cache  | Redis Cache               |
+| ---------------------- | ---------------- | ------------------------- |
+| Where it's stored      | App memory (RAM) | External Redis server     |
+| Shared across servers? | ❌ No            | ✅ Yes                    |
+| Survives restarts?     | ❌ No            | ✅ Yes (if configured)    |
+| Speed                  | ⚡ Fastest       | 🚀 Fast                   |
+| Setup needed?          | ❌ None          | ✅ Redis server + config  |
+| Best for               | Dev, simple apps | Production, scalable apps |
 
 ---
 
-### 🧪 What it does
+## 🧠 When Should You Use Each?
 
-- Clears existing users:
+### ✅ Use **In-Memory** When:
 
-  ```
-  🧹 Cleared user collection.
-  ```
+- You're building a **small app or MVP**
+- It's **single-instance**
+- You want something quick & easy to test
 
-- Seeds 100,000 users with:
+### ✅ Use **Redis** When:
 
-  - `userId`: incremental
-  - `name`: random full name
-  - `timestamp`: recent random date
-
-```bash
-⏱ Insert Time: 2.2s
-🎯 Seeded 100000 users.
-```
+- You're building a **production app**
+- You deploy multiple app instances
+- You want cache to **persist** across restarts
+- You need to **clear or share** cache across services
 
 ---
 
-## 🧠 Tips & Customization
+## 🧪 Summary
 
-- Change seed count in `seeder.ts`:
-
-  ```ts
-  await seeder.seed(100000); // modify as needed
-  ```
-
-- Add CLI support for `count` if needed.
-
-- Ensure MongoDB is running before executing.
-
----
-
-## ❓ Common Issues
-
-- **"Cannot find module" error**: use relative imports like `../data/...`, not `src/...`
-- **Mongo not running**: make sure your Docker container or Mongo service is up (`localhost:27017`)
-
----
-
-## ✅ Sample Output
-
-```bash
-🧹 Cleared user collection.
-⏱ Insert Time: 2.269s
-🎯 Seeded 100000 users.
-```
+| Category            | In-Memory Cache        | Redis Cache             |
+| ------------------- | ---------------------- | ----------------------- |
+| Location            | Inside Node.js process | External server         |
+| Speed               | ⚡ Ultra fast          | 🚀 Still very fast      |
+| Shared across apps? | ❌ No                  | ✅ Yes                  |
+| Persistence         | ❌ No                  | ✅ Yes (optional)       |
+| Setup effort        | ✅ Very low            | 🛠️ Requires Redis setup |
+| Production use?     | ❌ Not recommended     | ✅ Industry standard    |
