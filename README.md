@@ -1,8 +1,3 @@
-Here’s your **updated `README.md`** to reflect **Redis-based caching** with **NestJS**, replacing the old in-memory setup.
-
----
-
-````markdown
 # ⚡ MongoDB Performance Test - Redis Caching (NestJS)
 
 This project demonstrates how to cache MongoDB responses using **Redis** with **NestJS's CacheModule**, significantly improving response time on repeated API calls.

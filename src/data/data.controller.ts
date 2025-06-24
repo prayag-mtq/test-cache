@@ -24,7 +24,7 @@ export class DataController {
     if (!data) {
       console.log('❗Fetching from DB...');
       data = await this.userModel.find().exec();
-      await this.cacheManager.set(cacheKey, data, 6000); // cache for 60s
+      await this.cacheManager.set(cacheKey, data, 6000);
       fromCache = false;
     }
 
@@ -34,7 +34,7 @@ export class DataController {
       message: fromCache ? '🔁 Served from CACHE' : '❗Fetched from DB',
       count: data.length,
       timeMs: end - start,
-      cachedAt: new Date().toISOString(), // always updated
+      cachedAt: new Date().toISOString(),
     };
   }
 }

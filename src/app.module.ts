@@ -24,7 +24,7 @@ import * as redisStore from 'cache-manager-ioredis';
         uri: 'mongodb://localhost:27017/testdb',
         connectionFactory: (connection) => {
           connection.on('connected', () => console.log('🟩 Mongo connected'));
-          connection.on('error', (err) =>
+          connection.on('error', (err: any) =>
             console.error('🟥 Mongo error:', err),
           );
           connection.on('disconnected', () =>
